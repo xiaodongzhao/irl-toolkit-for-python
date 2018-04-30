@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 # GPIRL algorithm based on irl_toolkit/GPIRL
-
-from general import filldefaultparams
+import numpy as np
+import matplotlib.pyplot as plt
+from General import filldefaultparams
 
 # Fill in default parameters for the GPIRL algorithm
 # Create default parameters.
@@ -53,6 +54,30 @@ default_params = {
     'inducing_pts_count': 64}
 
 
-
 def gpirldefaultparams(algorithm_params):
     return filldefaultparams(algorithm_params, default_params)
+
+
+def cartaverage(tree, feature_data):
+    """
+    Return average reward for given regression tree.
+    :param tree:
+    :param feature_data:
+    :return:
+    """
+    if tree.type == 0:
+        # Simply return the average.
+        r = np.tile(tree.mean, [np.shape(feature_data.splittable)[0], 1])
+    else:
+        # Compute reward on each side.
+        ltR = cartaverage(tree.ltTree, feature_data)
+        gtR = cartaverage(tree.gtTree, feature_data)
+
+        # Combine.
+        ind = np.tile(feature_data.splittable[:, tree.test], (1, np.shape(ltR)[0]))
+        r = (1 - ind).dot(ltR) + ind.dot(gtR)
+
+    return r
+
+
+
